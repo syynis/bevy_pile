@@ -1,7 +1,7 @@
-use bevy::math::*;
+use bevy::{math::*, reflect::Reflect};
 use std::ops::{Index, IndexMut};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Reflect)]
 pub struct Grid<T> {
     cells: Vec<T>,
     size: IVec2, // TODO: use u32
