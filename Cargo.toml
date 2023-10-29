@@ -1,0 +1,16 @@
+[package]
+name = "bevy_pile"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy = "0.11.2"
+bevy_ecs_tilemap = {git = "https://github.com/StarArawn/bevy_ecs_tilemap", branch = "main"}
+egui = "0.22.0"
+epaint = "0.22.0"
+bevy_egui = "0.21.0"
+rfd = "0.12.0"
+futures-lite = "1.13.0"
+anyhow = "1.0"
+serde = "1.0"
+ron = "0.8"
