@@ -2,27 +2,30 @@ use bevy::prelude::*;
 
 use std::marker::PhantomData;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
+pub struct WorldCursorSet;
+
 #[derive(Default)]
-pub struct InputPlugin<T: Component> {
+pub struct WorldCursorPlugin<T: Component> {
     phantom: PhantomData<T>,
 }
 
-impl<T: Component> Plugin for InputPlugin<T> {
+impl<T: Component> Plugin for WorldCursorPlugin<T> {
     fn build(&self, app: &mut App) {
-        app.insert_resource(CursorPos::default())
-            .register_type::<CursorPos>()
-            .add_systems(Update, update_cursor_pos::<T>);
+        app.init_resource::<WorldCursor>()
+            .register_type::<WorldCursor>()
+            .add_systems(Update, update_cursor_pos::<T>.in_set(WorldCursorSet));
     }
 }
 
 #[derive(Default, Resource, Deref, DerefMut, Reflect)]
 #[reflect(Resource)]
-pub struct CursorPos(pub Vec2);
+pub struct WorldCursor(pub Vec2);
 
-pub fn update_cursor_pos<T: Component>(
+fn update_cursor_pos<T: Component>(
     camera_query: Query<(&Camera, &GlobalTransform), With<T>>,
     mut cursor_moved_events: EventReader<CursorMoved>,
-    mut cursor_pos: ResMut<CursorPos>,
+    mut cursor_pos: ResMut<WorldCursor>,
 ) {
     let Ok((camera, transform)) = camera_query.get_single() else {
         return;

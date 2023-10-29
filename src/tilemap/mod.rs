@@ -1,7 +1,7 @@
 use bevy::{ecs::system::Command, prelude::*};
 use bevy_ecs_tilemap::prelude::*;
 
-use crate::cursor::CursorPos;
+use crate::cursor::{WorldCursor, WorldCursorSet};
 use crate::util::box_lines;
 
 use self::access::TileUpdateEvent;
@@ -11,16 +11,19 @@ pub mod access;
 pub mod layer;
 pub mod serialization;
 
-pub struct LevelPlugin;
+pub struct TileCursorPlugin;
 
 #[derive(Resource, Default, Deref, DerefMut)]
 pub struct TileCursor(pub Option<TilePos>);
 
-impl Plugin for LevelPlugin {
+impl Plugin for TileCursorPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(TilemapPlugin);
         app.insert_resource(TileCursor::default());
-        app.add_systems(Update, update_tile_cursor.run_if(map_exists));
+        app.add_systems(
+            Update,
+            update_tile_cursor.run_if(map_exists).after(WorldCursorSet),
+        );
         app.add_event::<TileUpdateEvent>();
     }
 }
@@ -82,7 +85,7 @@ impl Command for SpawnMapCommand {
 }
 
 pub fn update_tile_cursor(
-    world_cursor: Res<CursorPos>,
+    world_cursor: Res<WorldCursor>,
     mut tile_cursor: ResMut<TileCursor>,
     tile_storage_q: Query<(&Transform, &TilemapSize)>,
 ) {
