@@ -87,11 +87,11 @@ impl Command for SpawnMapCommand {
 pub fn update_tile_cursor(
     world_cursor: Res<WorldCursor>,
     mut tile_cursor: ResMut<TileCursor>,
-    tile_storage_q: Query<(&Transform, &TilemapSize)>,
+    tile_storage_q: Query<(&Transform, &TilemapSize, &TilemapGridSize)>,
 ) {
     // FIXME We should only query the currently focused layer,
     // this is especially important if at some point layers have different transforms
-    for (map_transform, map_size) in tile_storage_q.iter() {
+    for (map_transform, map_size, grid_size) in tile_storage_q.iter() {
         if world_cursor.is_changed() {
             let cursor_pos = **world_cursor;
             let cursor_in_map_pos: Vec2 = {
@@ -100,7 +100,7 @@ pub fn update_tile_cursor(
                 cursor_in_map_pos.truncate().truncate()
             };
 
-            **tile_cursor = from_world_pos(&cursor_in_map_pos, &map_size);
+            **tile_cursor = from_world_pos(&cursor_in_map_pos, &map_size, &grid_size);
         }
         return;
     }
@@ -110,6 +110,7 @@ pub fn world_to_tile_pos(
     pos: Vec2,
     map_transform: &Transform,
     map_size: &TilemapSize,
+    grid_size: &TilemapGridSize,
 ) -> Option<TilePos> {
     let in_map_pos: Vec2 = {
         let pos = Vec4::from((pos.extend(0.0), 1.0));
@@ -117,25 +118,35 @@ pub fn world_to_tile_pos(
         in_map_pos.truncate().truncate()
     };
 
-    from_world_pos(&in_map_pos, &map_size)
+    from_world_pos(&in_map_pos, &map_size, &grid_size)
 }
 
 // Simplified version of TilePos;:from_world_pos with assumptions about tile and grid size
-pub fn from_world_pos(world_pos: &Vec2, size: &TilemapSize) -> Option<TilePos> {
-    let x = ((world_pos.x / 16.) + 0.5).floor() as i32;
-    let y = ((world_pos.y / 16.) + 0.5).floor() as i32;
+pub fn from_world_pos(
+    world_pos: &Vec2,
+    size: &TilemapSize,
+    grid_size: &TilemapGridSize,
+) -> Option<TilePos> {
+    let x = ((world_pos.x / grid_size.x) + 0.5).floor() as i32;
+    let y = ((world_pos.y / grid_size.y) + 0.5).floor() as i32;
 
     TilePos::from_i32_pair(x, y, size)
 }
 
-pub fn tile_to_world_pos(tpos: &TilePos) -> Vec2 {
-    let grid_size = Vec2::splat(16.);
+pub fn tile_to_world_pos(tpos: &TilePos, grid_size: &TilemapGridSize) -> Vec2 {
     Vec2::new(grid_size.x * (tpos.x as f32), grid_size.y * (tpos.y as f32))
 }
 
-pub fn draw_tile_outline(tile_cursor: Res<TileCursor>, mut gizmos: Gizmos) {
+pub fn draw_tile_outline(
+    tile_cursor: Res<TileCursor>,
+    grid_size: Query<&TilemapGridSize>,
+    mut gizmos: Gizmos,
+) {
+    let Ok(grid_size) = grid_size.get_single() else {
+        return;
+    };
     if let Some(tile_cursor) = **tile_cursor {
-        let wpos = tile_to_world_pos(&tile_cursor);
+        let wpos = tile_to_world_pos(&tile_cursor, &grid_size);
 
         for (start, end) in box_lines(wpos, Vec2::new(16., 16.)) {
             gizmos.line_2d(start, end, Color::RED);
