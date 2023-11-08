@@ -91,7 +91,7 @@ impl FnWidget for PanelTitle {
     type Output = ();
 
     fn new(_world: &mut World, _ui: &egui::Ui) -> Self {
-        Self::default()
+        Self
     }
 
     fn draw(&mut self, _world: &mut World, ui: &mut egui::Ui, _id: egui::Id, title: &str) {

@@ -86,8 +86,8 @@ impl<'w, 's> LevelSerializer<'w, 's> {
     }
 
     pub fn load_from_file(&mut self, path: PathBuf) {
-        if let Some(data) = fs::read_to_string(path).ok() {
-            if let Some(level) = ron::from_str::<SerializableLevel>(&data).ok() {
+        if let Ok(data) = fs::read_to_string(path) {
+            if let Ok(level) = ron::from_str::<SerializableLevel>(&data) {
                 self.storage_access.clear(Layer::World);
                 for tile in level.tiles {
                     self.storage_access.replace(

@@ -33,7 +33,7 @@ fn update_cursor_pos<T: Component>(
 
     for moved_event in cursor_moved_events.iter() {
         let Some(new) = camera
-            .viewport_to_world(&transform, moved_event.position)
+            .viewport_to_world(transform, moved_event.position)
             .map(|ray| ray.origin.truncate())
         else {
             return;

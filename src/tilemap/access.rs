@@ -131,7 +131,7 @@ impl<'w, 's> TilemapAccess<'w, 's> {
         let Some((_, size)) = self.transform_size(layer) else {
             return;
         };
-        let size = size.clone();
+        let size = *size;
 
         let Some((_, mut storage, _)) = self.layers.iter_mut().find(|(_, _, l)| **l == layer)
         else {
@@ -147,6 +147,6 @@ impl<'w, 's> TilemapAccess<'w, 's> {
                 self.cmds.entity(*tile).despawn_recursive();
             }
         });
-        pos_to_remove.iter().for_each(|pos| storage.remove(&pos));
+        pos_to_remove.iter().for_each(|pos| storage.remove(pos));
     }
 }

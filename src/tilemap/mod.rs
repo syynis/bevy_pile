@@ -91,7 +91,7 @@ pub fn update_tile_cursor(
 ) {
     // FIXME We should only query the currently focused layer,
     // this is especially important if at some point layers have different transforms
-    for (map_transform, map_size, grid_size) in tile_storage_q.iter() {
+    if let Some((map_transform, map_size, grid_size)) = tile_storage_q.iter().next() {
         if world_cursor.is_changed() {
             let cursor_pos = **world_cursor;
             let cursor_in_map_pos: Vec2 = {
@@ -100,9 +100,8 @@ pub fn update_tile_cursor(
                 cursor_in_map_pos.truncate().truncate()
             };
 
-            **tile_cursor = from_world_pos(&cursor_in_map_pos, &map_size, &grid_size);
+            **tile_cursor = from_world_pos(&cursor_in_map_pos, map_size, grid_size);
         }
-        return;
     }
 }
 
@@ -118,7 +117,7 @@ pub fn world_to_tile_pos(
         in_map_pos.truncate().truncate()
     };
 
-    from_world_pos(&in_map_pos, &map_size, &grid_size)
+    from_world_pos(&in_map_pos, map_size, grid_size)
 }
 
 // Simplified version of TilePos;:from_world_pos with assumptions about tile and grid size
@@ -146,7 +145,7 @@ pub fn draw_tile_outline(
         return;
     };
     if let Some(tile_cursor) = **tile_cursor {
-        let wpos = tile_to_world_pos(&tile_cursor, &grid_size);
+        let wpos = tile_to_world_pos(&tile_cursor, grid_size);
 
         for (start, end) in box_lines(wpos, Vec2::new(16., 16.)) {
             gizmos.line_2d(start, end, Color::RED);
