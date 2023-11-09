@@ -32,11 +32,6 @@ impl<'w, 's> TilemapAccess<'w, 's> {
     ) -> Option<Entity> {
         let tilemap_entity = self.tilemap_entity(layer)?;
 
-        let color = match layer {
-            Layer::World => Color::rgba_u8(0, 0, 0, 255),
-            Layer::Near => Color::rgba_u8(0, 127, 0, 127),
-            Layer::Far => Color::rgba_u8(127, 0, 0, 63),
-        };
         let tile_entity = self
             .cmds
             .spawn((TileBundle {
@@ -44,7 +39,6 @@ impl<'w, 's> TilemapAccess<'w, 's> {
                 tilemap_id: TilemapId(tilemap_entity),
                 texture_index: tile_properties.id,
                 flip: tile_properties.flip,
-                color: TileColor(color),
                 ..default()
             },))
             .id();
@@ -58,27 +52,32 @@ impl<'w, 's> TilemapAccess<'w, 's> {
         Some(tile_entity)
     }
 
-    pub fn try_place(&mut self, pos: &TilePos, tile_properties: TileProperties, layer: Layer) {
+    pub fn try_place(
+        &mut self,
+        pos: &TilePos,
+        tile_properties: TileProperties,
+        layer: Layer,
+    ) -> Option<Entity> {
         let Some(_) = self.get(pos, layer) else {
-            return;
+            return None;
         };
-        if let Some(new) = self.set_unchecked(pos, tile_properties, layer) {
-            self.tile_update_event_writer.send(TileUpdateEvent {
-                modification: TileModification::Added { old: None, new },
-            });
-        }
+        let new = self.set_unchecked(pos, tile_properties, layer)?;
+        self.tile_update_event_writer.send(TileUpdateEvent {
+            modification: TileModification::Added { old: None, new },
+        });
+        Some(new)
     }
 
-    pub fn replace(&mut self, pos: &TilePos, id: TileProperties, layer: Layer) {
+    pub fn replace(&mut self, pos: &TilePos, id: TileProperties, layer: Layer) -> Option<Entity> {
         let old = self.get(pos, layer);
         if old.is_some() {
             self.remove(pos, layer);
         }
-        if let Some(new) = self.set_unchecked(pos, id, layer) {
-            self.tile_update_event_writer.send(TileUpdateEvent {
-                modification: TileModification::Added { old, new },
-            });
-        }
+        let new = self.set_unchecked(pos, id, layer)?;
+        self.tile_update_event_writer.send(TileUpdateEvent {
+            modification: TileModification::Added { old, new },
+        });
+        Some(new)
     }
 
     fn despawn(&mut self, pos: &TilePos, layer: Layer) -> Option<Entity> {
@@ -89,12 +88,12 @@ impl<'w, 's> TilemapAccess<'w, 's> {
         Some(entity)
     }
 
-    pub fn remove(&mut self, pos: &TilePos, layer: Layer) {
-        if let Some(old) = self.despawn(pos, layer) {
-            self.tile_update_event_writer.send(TileUpdateEvent {
-                modification: TileModification::Removed { old },
-            });
-        }
+    pub fn remove(&mut self, pos: &TilePos, layer: Layer) -> Option<Entity> {
+        let old = self.despawn(pos, layer)?;
+        self.tile_update_event_writer.send(TileUpdateEvent {
+            modification: TileModification::Removed { old },
+        });
+        Some(old)
     }
 
     pub fn get(&self, pos: &TilePos, layer: Layer) -> Option<Entity> {
