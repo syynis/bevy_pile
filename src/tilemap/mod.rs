@@ -18,7 +18,9 @@ pub struct TileCursor(pub Option<TilePos>);
 
 impl Plugin for TileCursorPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(TilemapPlugin);
+        if !app.is_plugin_added::<TilemapPlugin>() {
+            app.add_plugins(TilemapPlugin);
+        }
         app.insert_resource(TileCursor::default());
         app.add_systems(
             Update,
